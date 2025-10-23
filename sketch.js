@@ -12,12 +12,13 @@ let explosionParticles = [];
 let explosionTriggered = false; 
 
 // =================================================================
-// 步驟一：模擬成績數據接收
+// 步驟一：處理 H5P 傳送的分數訊息
 // -----------------------------------------------------------------
 
 window.addEventListener('message', function (event) {
     const data = event.data;
     
+    // 檢查訊息類型是否為 H5P 成績，並確保從 iframe 接收
     if (data && data.type === 'H5P_SCORE_RESULT') {
         
         finalScore = data.score; 
@@ -29,10 +30,12 @@ window.addEventListener('message', function (event) {
         // --- 重置爆炸狀態 ---
         let percentage = (maxScore > 0) ? (finalScore / maxScore) * 100 : 0;
         
+        // 分數未達 90% 時重置煙火觸發狀態
         if (percentage < 90) {
             explosionTriggered = false; 
         }
 
+        // 強制 p5.js 重新繪製畫面 (雖然 draw() 已經在循環，但這確保了立即更新)
         if (typeof redraw === 'function') {
             redraw(); 
         }
@@ -45,16 +48,19 @@ window.addEventListener('message', function (event) {
 // -----------------------------------------------------------------
 
 function setup() { 
-    // 【關鍵修正點：將畫布附加到指定的 DOM 元素】
-    let canvas = createCanvas(windowWidth / 2, windowHeight / 2); 
-    // 假設您在 index.html 中新增了一個 id="p5-canvas-container" 的 div
+    // 【修正：固定畫布尺寸，確保版面穩定】
+    let canvas = createCanvas(500, 300); 
+    
+    // 將畫布附加到 index.html 中 id="p5-canvas-container" 的 div
     canvas.parent('p5-canvas-container'); 
     
-    // 為了煙火動畫，必須讓 draw() 持續循環
+    // 使用 HSB 顏色模式，讓顏色控制更直覺
     colorMode(HSB, 360, 100, 100, 255); 
+    
+    // draw() 會持續循環，以運行動畫
 } 
 
-// --- 煙火粒子生成函數 (簡化版) ---
+// --- 煙火粒子生成函數 ---
 function createFireworkExplosion(x, y, count, fireworkHue) {
     if (explosionTriggered) return;
     
@@ -64,7 +70,6 @@ function createFireworkExplosion(x, y, count, fireworkHue) {
         let angle = random(TWO_PI); 
         let speed = random(3, 10); 
         
-        // 使用 HSB 隨機化顏色
         let particleColor = color(fireworkHue, random(80, 100), random(80, 100));
 
         let particle = {
@@ -81,11 +86,10 @@ function createFireworkExplosion(x, y, count, fireworkHue) {
 
 
 function draw() { 
-    // 【關鍵修正點：半透明背景，用於殘影效果】
-    // 設為黑色背景 (色相 0, 飽和 0, 亮度 0)
-    background(0, 0, 0, 50); // 每幀繪製半透明的黑色，形成殘影
+    // 使用帶透明度的黑色背景 (50/255)，產生粒子拖曳的殘影效果
+    background(0, 0, 0, 50); 
     
-    // 計算百分比時檢查 maxScore 是否為 0
+    // 計算百分比
     let percentage = 0;
     if (maxScore > 0) {
         percentage = (finalScore / maxScore) * 100;
@@ -95,25 +99,26 @@ function draw() {
     textAlign(CENTER);
     
     // -----------------------------------------------------------------
-    // A. 根據分數區間改變文本顏色和內容 (畫面反映一)
+    // A. 根據分數區間改變文本顏色和內容
     // -----------------------------------------------------------------
     if (percentage >= 90) {
-        // 滿分或高分：顯示鼓勵文本，使用鮮豔顏色 (綠色)
-        fill(120, 100, 80); 
+        // 高分：綠色 (Hue 120)
+        fill(120, 100, 100); 
         text("恭喜！優異成績！", width / 2, height / 2 - 50);
         
         // !!! 煙火特效觸發 !!!
         if (!explosionTriggered) {
+            // 隨機產生一個色相的煙火
             createFireworkExplosion(width / 2, height / 2, 80, random(360));
         }
         
     } else if (percentage >= 60) {
-        // 中等分數：顯示一般文本，使用黃色
+        // 中等分數：黃色 (Hue 60)
         fill(60, 100, 90); 
         text("成績良好，請再接再厲。", width / 2, height / 2 - 50);
         
     } else if (percentage > 0) {
-        // 低分：顯示警示文本，使用紅色
+        // 低分：紅色 (Hue 0)
         fill(0, 100, 80); 
         text("需要加強努力！", width / 2, height / 2 - 50);
         
@@ -130,21 +135,6 @@ function draw() {
     
     
     // -----------------------------------------------------------------
-    // B. 根據分數觸發不同的幾何圖形反映 (畫面反映二)
-    // -----------------------------------------------------------------
-    
-    if (percentage >= 90) {
-        fill(120, 100, 80, 150); 
-        noStroke();
-        circle(width / 2, height / 2 + 150, 150);
-        
-    } else if (percentage >= 60) {
-        fill(60, 100, 90, 150); 
-        rectMode(CENTER);
-        rect(width / 2, height / 2 + 150, 150, 150);
-    }
-    
-    // -----------------------------------------------------------------
     // C. 煙火粒子更新與繪製
     // -----------------------------------------------------------------
     
@@ -153,9 +143,9 @@ function draw() {
     for (let i = explosionParticles.length - 1; i >= 0; i--) {
         let p = explosionParticles[i];
         
-        p.vel.add(gravity); 
-        p.pos.add(p.vel);
-        p.life -= 3; 
+        p.vel.add(gravity); // 加上重力
+        p.pos.add(p.vel);   // 更新位置
+        p.life -= 3;        // 減少生命值 (淡出)
         
         // 繪製粒子
         push();
