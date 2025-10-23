@@ -4,7 +4,7 @@
 
 let finalScore = 0; 
 let maxScore = 0;
-// 確保畫面啟動時有內容顯示
+// 【修正】給予初始值，避免畫面開始時顯示空白
 let scoreText = "等待成績訊息..."; 
 
 // --- 煙火特效相關變數 ---
@@ -18,9 +18,9 @@ let explosionTriggered = false;
 window.addEventListener('message', function (event) {
     const data = event.data;
     
-    // 檢查訊息類型是否為 H5P 成績，並確保從 iframe 接收
     if (data && data.type === 'H5P_SCORE_RESULT') {
         
+        // !!! 關鍵步驟：更新全域變數 !!!
         finalScore = data.score; 
         maxScore = data.maxScore;
         scoreText = `最終成績分數: ${finalScore}/${maxScore}`;
@@ -35,7 +35,7 @@ window.addEventListener('message', function (event) {
             explosionTriggered = false; 
         }
 
-        // 強制 p5.js 重新繪製畫面 (雖然 draw() 已經在循環，但這確保了立即更新)
+        // 雖然 draw() 已經在循環，但這確保了立即更新
         if (typeof redraw === 'function') {
             redraw(); 
         }
@@ -48,19 +48,18 @@ window.addEventListener('message', function (event) {
 // -----------------------------------------------------------------
 
 function setup() { 
-    // 【修正：固定畫布尺寸，確保版面穩定】
-    let canvas = createCanvas(500, 300); 
+    // 【修正】使用固定尺寸，對應 index.html 中 #p5-canvas-container 的寬高
+    let canvas = createCanvas(700, 400); 
     
     // 將畫布附加到 index.html 中 id="p5-canvas-container" 的 div
     canvas.parent('p5-canvas-container'); 
     
-    // 使用 HSB 顏色模式，讓顏色控制更直覺
+    // 讓 draw() 持續循環 (為了煙火動畫)，所以移除 noLoop()
+    // 設置 HSB 顏色模式 (更適合動畫，但 draw 中仍使用 RGB/常規填色)
     colorMode(HSB, 360, 100, 100, 255); 
-    
-    // draw() 會持續循環，以運行動畫
 } 
 
-// --- 煙火粒子生成函數 ---
+// --- 煙火粒子生成函數 (必須加入，這是煙火的核心) ---
 function createFireworkExplosion(x, y, count, fireworkHue) {
     if (explosionTriggered) return;
     
@@ -70,6 +69,7 @@ function createFireworkExplosion(x, y, count, fireworkHue) {
         let angle = random(TWO_PI); 
         let speed = random(3, 10); 
         
+        // 使用 HSB 顏色
         let particleColor = color(fireworkHue, random(80, 100), random(80, 100));
 
         let particle = {
@@ -86,10 +86,10 @@ function createFireworkExplosion(x, y, count, fireworkHue) {
 
 
 function draw() { 
-    // 使用帶透明度的黑色背景 (50/255)，產生粒子拖曳的殘影效果
+    // 【修正】使用帶透明度的黑色背景，讓煙火有殘影效果
     background(0, 0, 0, 50); 
     
-    // 計算百分比
+    // 計算百分比時檢查 maxScore 是否為 0
     let percentage = 0;
     if (maxScore > 0) {
         percentage = (finalScore / maxScore) * 100;
@@ -99,53 +99,78 @@ function draw() {
     textAlign(CENTER);
     
     // -----------------------------------------------------------------
-    // A. 根據分數區間改變文本顏色和內容
+    // A. 根據分數區間改變文本顏色和內容 (使用您提供的 RGB 顏色)
     // -----------------------------------------------------------------
+    
+    // 暫時切回 RGB 模式，以便使用您提供的顏色碼 (0-255)
+    colorMode(RGB, 255); 
+    
     if (percentage >= 90) {
-        // 高分：綠色 (Hue 120)
-        fill(120, 100, 100); 
-        text("恭喜！優異成績！", width / 2, height / 2 - 50);
+        // 滿分或高分：綠色 (RGB)
+        fill(0, 200, 50); 
+        text("恭喜！優異成績！", width / 2, height / 2 - 80); // 調整 Y 軸位置
         
         // !!! 煙火特效觸發 !!!
         if (!explosionTriggered) {
-            // 隨機產生一個色相的煙火
+            // 在 HSB 模式下生成煙火，所以暫時切回 HSB
+            colorMode(HSB, 360, 100, 100, 255); 
             createFireworkExplosion(width / 2, height / 2, 80, random(360));
+            colorMode(RGB, 255); // 切回 RGB
         }
         
     } else if (percentage >= 60) {
-        // 中等分數：黃色 (Hue 60)
-        fill(60, 100, 90); 
-        text("成績良好，請再接再厲。", width / 2, height / 2 - 50);
+        // 中等分數：黃色 (RGB)
+        fill(255, 181, 35); 
+        text("成績良好，請再接再厲。", width / 2, height / 2 - 80);
         
     } else if (percentage > 0) {
-        // 低分：紅色 (Hue 0)
-        fill(0, 100, 80); 
-        text("需要加強努力！", width / 2, height / 2 - 50);
+        // 低分：紅色 (RGB)
+        fill(200, 0, 0); 
+        text("需要加強努力！", width / 2, height / 2 - 80);
         
     } else {
         // 尚未收到分數或分數為 0
-        fill(0, 0, 95); // 幾乎白色
-        text(scoreText, width / 2, height / 2 - 50);
+        fill(150);
+        text(scoreText, width / 2, height / 2 - 80);
     }
 
     // 顯示具體分數
     textSize(50);
-    fill(0, 0, 95); // 幾乎白色
-    text(`得分: ${finalScore}/${maxScore}`, width / 2, height / 2 + 50);
+    fill(50);
+    text(`得分: ${finalScore}/${maxScore}`, width / 2, height / 2 + 20);
     
     
     // -----------------------------------------------------------------
-    // C. 煙火粒子更新與繪製
+    // B. 根據分數觸發不同的幾何圖形反映
     // -----------------------------------------------------------------
+    
+    if (percentage >= 90) {
+        // 畫一個大圓圈代表完美 (RGB)
+        fill(0, 200, 50, 150); 
+        noStroke();
+        circle(width / 2, height / 2 + 100, 150);
+        
+    } else if (percentage >= 60) {
+        // 畫一個方形 (RGB)
+        fill(255, 181, 35, 150);
+        rectMode(CENTER);
+        rect(width / 2, height / 2 + 100, 150, 150);
+    }
+    
+    // -----------------------------------------------------------------
+    // C. 煙火粒子更新與繪製 (必須切回 HSB 才能正確使用粒子的 color/life)
+    // -----------------------------------------------------------------
+    
+    colorMode(HSB, 360, 100, 100, 255); // 切回 HSB
     
     let gravity = createVector(0, 0.1); 
     
     for (let i = explosionParticles.length - 1; i >= 0; i--) {
         let p = explosionParticles[i];
         
-        p.vel.add(gravity); // 加上重力
-        p.pos.add(p.vel);   // 更新位置
-        p.life -= 3;        // 減少生命值 (淡出)
+        p.vel.add(gravity); 
+        p.pos.add(p.vel);
+        p.life -= 3; 
         
         // 繪製粒子
         push();
@@ -163,4 +188,6 @@ function draw() {
             explosionParticles.splice(i, 1);
         }
     }
+    
+    colorMode(RGB, 255); // 繪製結束，切回 RGB
 }
