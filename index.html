@@ -10,7 +10,6 @@
     <script src="sketch.js"></script>
     
     <style>
-        /* 確保內容置中且版面乾淨 */
         body { 
             margin: 0; 
             padding: 20px;
@@ -25,28 +24,32 @@
             text-align: center;
             color: #333;
         }
-        /* p5.js 畫布容器 */
+        /* p5.js 畫布容器 (現在它應該在 H5P 測驗的上方) */
         #p5-canvas-container {
             margin: 20px 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 讓畫布更突出 */
-            border: 1px solid #ddd;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* 讓畫布更突出 */
+            border: 2px solid #aaa;
+            /* 【調整 1】讓畫布尺寸更大，佔據主要視覺區域 */
+            width: 700px; /* 固定寬度 */
+            height: 400px; /* 固定高度 */
         }
         #h5pContainer {
             margin-top: 20px;
+            /* 【調整 2】讓 H5P 測驗尺寸較小 */
+            width: 450px; 
         }
     </style>
 </head>
 <body>
-    <h1>英文測驗 - 拖曳答案</h1>
-    <h2>H5P 互動結果與 p5.js 特效顯示</h2>
-
+    <h1>H5P 互動結果與 p5.js 特效顯示</h1>
+    
     <div id="p5-canvas-container"></div>
     
     <div id="h5pContainer">
         <iframe 
             id="h5pIframe" 
             src="1.html" 
-            width="550" 
+            width="100%" 
             height="400" 
             frameborder="0"
             style="border: 2px solid #ccc;">
