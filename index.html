@@ -5,27 +5,31 @@
     <title>H5P 成績分數顯示範例 (p5.js)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script> 
-    
     <script src="libraries/p5.sound.min.js"></script>
     
     <script src="sketch.js"></script>
     
     <style>
+        /* 確保內容置中且版面乾淨 */
         body { 
             margin: 0; 
+            padding: 20px;
             display: flex; 
             flex-direction: column;
             align-items: center; 
             min-height: 100vh; 
             font-family: Arial, sans-serif;
-            background-color: #333; /* 讓黑色畫布更明顯 */
-            color: white; /* 讓標題文字可見 */
+            background-color: #f4f4f4; /* 淺灰色背景 */
         }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        /* p5.js 畫布容器 */
         #p5-canvas-container {
-            /* 讓畫布與 H5P 內容分開 */
-            margin-bottom: 20px;
-            /* 讓畫布周圍有個邊框，更容易看到畫布是否被創建 */
-            border: 1px dashed gray; 
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 讓畫布更突出 */
+            border: 1px solid #ddd;
         }
         #h5pContainer {
             margin-top: 20px;
@@ -33,9 +37,8 @@
     </style>
 </head>
 <body>
-    <h1>英文測驗</h1>
-    <h2>拖曳右邊答案到左邊空格</h2>
-    <h1>H5P 互動與 p5.js 成績顯示</h1>
+    <h1>英文測驗 - 拖曳答案</h1>
+    <h2>H5P 互動結果與 p5.js 特效顯示</h2>
 
     <div id="p5-canvas-container"></div>
     
@@ -43,8 +46,9 @@
         <iframe 
             id="h5pIframe" 
             src="1.html" 
-            width="400" 
-            height="300" 
+            width="550" 
+            height="400" 
+            frameborder="0"
             style="border: 2px solid #ccc;">
         </iframe>
     </div>
